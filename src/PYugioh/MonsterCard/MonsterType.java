@@ -1,4 +1,4 @@
-package PYugioh;
+package PYugioh.MonsterCard;
 
 public enum MonsterType {
     Dragon,

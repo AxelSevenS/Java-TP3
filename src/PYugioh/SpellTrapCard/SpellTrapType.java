@@ -1,4 +1,4 @@
-package PYugioh;
+package PYugioh.SpellTrapCard;
 
 public enum SpellTrapType {
     Normal,

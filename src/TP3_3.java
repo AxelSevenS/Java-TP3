@@ -24,8 +24,8 @@ public class TP3_3 {
         IYugiohCard[] cards2 = new IYugiohCard[1];
         cards2[0] = new MysticalSpaceTyphoonCard();
 
-        Player player1 = new Player("Player 1", 2000);
-        Player player2 = new Player("Player 2", 2000);
+        Player player1 = new Player("Player 1");
+        Player player2 = new Player("Player 2");
         GameBoard game = new GameBoard(player1, player2, cards1, cards2);
 
         player1.cardsInDeck.get(0).move(CardPlacement.Hand);

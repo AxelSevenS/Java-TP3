@@ -4,8 +4,6 @@ import java.awt.*;
 
 public interface IYugiohCard {
 
-    void initialize(Player player, GameBoard game);
-
     String getName();
     String getDescription();
     String getID();
@@ -15,6 +13,5 @@ public interface IYugiohCard {
     CardPlacement getPlacement();
 
     void move(CardPlacement to);
-    void addMoveEventListener(CardMoveEventListener listener);
-    void onMove(CardPlacement from, CardPlacement to);
+    void addMoveEventListener(CardMoveCallback listener);
 }
