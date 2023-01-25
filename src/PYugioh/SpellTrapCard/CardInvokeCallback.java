@@ -1,19 +1,18 @@
 package PYugioh.SpellTrapCard;
 
-import PYugioh.CardPlacement;
-import PYugioh.Player;
+import PYugioh.IYugiohCard;
 
 import java.util.Objects;
 
 @FunctionalInterface
 public interface CardInvokeCallback {
-    void invoke(Player player);
+    void invoke(IYugiohCard invoker);
 
     public default CardInvokeCallback andThen(CardInvokeCallback after) {
         Objects.requireNonNull(after);
-        return (player) -> {
-            invoke(player);
-            after.invoke(player);
+        return (invoker) -> {
+            invoke(invoker);
+            after.invoke(invoker);
         };
     }
 }

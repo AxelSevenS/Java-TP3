@@ -1,26 +1,35 @@
 package PYugioh.MonsterCard;
 
+import PSchoolClass.SchoolClass;
 import PYugioh.*;
-import PYugioh.CardMoveCallback;
+import PYugioh.CardChangePlacementCallback;
+import com.google.gson.Gson;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
+
+import javax.imageio.ImageIO;
 
 public class MonsterCard implements IYugiohCard{
     public MonsterCard(
             String name,
             String description,
             String id,
-            Image cardImage,
+            String imagePath,
             int attack,
             int defense,
-            CardMoveCallback onMove
+            CardChangePlacementCallback onMove
     ) {
         this.name = name;
         this.description = description;
         this.id = id;
-        this.cardImage = cardImage;
+        this.imagePath = imagePath;
         this.attack = attack;
         this.defense = defense;
         this.onMove = onMove;
@@ -29,42 +38,57 @@ public class MonsterCard implements IYugiohCard{
     private String name;
     private String description;
     private String id;
-    private Image cardImage;
+    private String imagePath;
     private MonsterType monsterType;
     private MonsterEffect monsterEffect;
     private MonsterAttribute monsterAttribute;
     public int attack;
     public int defense;
-    private CardMoveCallback onMove;
 
-    private CardPlacement placement;
+    private CardPlacement placement = CardPlacement.Deck;
+    private CardChangePlacementCallback onMove;
+    private ArrayList<CardChangePlacementCallback> cardChangePlacementCallbacks = new ArrayList<>();
+
+    private boolean attackPosition = true;
+    public boolean canChangePosition;
+    private CardChangePositionCallback onChangePosition;
+    private ArrayList<CardChangePositionCallback> cardChangePositionCallbacks = new ArrayList<>();
+
+    private boolean hidden = false;
+
 
     private Player player;
-    private ArrayList<CardMoveCallback> cardMoveCallbacks = new ArrayList<>();
 
-    @Override
     public String getName() {
         return name;
     }
 
-    @Override
     public String getDescription() {
         return description;
     }
 
-    @Override
     public String getID() {
         return id;
     }
 
-    @Override
-    public Image getCardImage() {
-        return cardImage;
+    public BufferedImage getCardImage() {
+        try {
+            return ImageIO.read(new File(imagePath));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return DeckPanel.cardBackfaceImage;
+        }
     }
 
-    @Override
     public CardPlacement getPlacement() {
         return placement;
+    }
+
+    public boolean isInAttackPosition() {
+        return attackPosition;
+    }
+    public boolean isHidden() {
+        return hidden;
     }
 
     public MonsterType getType() { return monsterType; }
@@ -75,42 +99,27 @@ public class MonsterCard implements IYugiohCard{
     public Player getPlayer() {
         return player;
     }
-
     public void setPlayer(Player player) {
         this.player = player;
         switch (placement) {
-            case Field -> player.deck.fieldCard = this;
             case Monster -> player.deck.monsterCards.add(this);
-            case ExtraDeck -> player.deck.cardsInExtraDeck.add(this);
-            case Banished -> player.deck.cardsInBanished.add(this);
             case Graveyard -> player.deck.cardsInGraveyard.add(this);
             case Hand -> player.deck.cardsInHand.add(this);
             case Deck -> player.deck.cardsInDeck.add(this);
+            default -> {}
         }
     }
 
-    @Override
     public void move(CardPlacement to) {
         if (to == getPlacement() || to == CardPlacement.SpellTrap)
             return;
 
         switch (to) {
-            case Field -> {
-                if (this.player.deck.fieldCard != null)
-                    this.player.deck.fieldCard.move(CardPlacement.Graveyard);
-                this.player.deck.fieldCard = this;
-            }
             case Monster -> {
                 if (this.player.deck.monsterCards.size() >= 5)
                     return;
                 this.player.deck.monsterCards.add(this);
             }
-            case ExtraDeck -> {
-                if (this.player.deck.cardsInExtraDeck.size() >= 15)
-                    return;
-                this.player.deck.cardsInExtraDeck.add(this);
-            }
-            case Banished -> this.player.deck.cardsInBanished.add(this);
             case Graveyard -> this.player.deck.cardsInGraveyard.add(this);
             case Hand -> {
                 if (this.player.deck.cardsInHand.size() >= 6)
@@ -120,29 +129,62 @@ public class MonsterCard implements IYugiohCard{
             case Deck -> this.player.deck.cardsInDeck.add(this);
         }
 
-        switch (this.placement) {
-            case Field -> this.player.deck.fieldCard = null;
+        switch (placement) {
             case Monster -> this.player.deck.monsterCards.remove(this);
-            case ExtraDeck -> this.player.deck.cardsInExtraDeck.remove(this);
-            case Banished -> this.player.deck.cardsInBanished.remove(this);
             case Graveyard -> this.player.deck.cardsInGraveyard.remove(this);
             case Hand -> this.player.deck.cardsInHand.remove(this);
             case Deck -> this.player.deck.cardsInDeck.remove(this);
+            default -> {}
         }
 
 
         System.out.println("Moved " + getName() + " from " + getPlacement() + " to " + to);
 
-        for (CardMoveCallback listener : cardMoveCallbacks) {
-            listener.invoke(player, getPlacement(), to);
-            cardMoveCallbacks.remove(listener);
+        for (CardChangePlacementCallback listener : cardChangePlacementCallbacks) {
+            listener.invoke(this, getPlacement(), to);
+            cardChangePlacementCallbacks.remove(listener);
         }
-        onMove.invoke(player, placement, to);
+        onMove.invoke(this, placement, to);
         placement = to;
     }
+    /**
+     * @param path
+     */
+    public void saveToFile(Path path) {
 
-    @Override
-    public void addMoveEventListener(CardMoveCallback listener) {
+        try {
+            Gson gson = new Gson();
+            FileWriter file = new FileWriter( path.toString() );
+            String json = gson.toJson(this);
+            file.write(json);
+            file.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
+
+    /**
+     * @param path
+     */
+    public static MonsterCard loadFromFile(Path path) {
+        try {
+            Gson gson = new Gson();
+            FileReader file = new FileReader( path.toString() );
+            MonsterCard card = gson.fromJson(file, MonsterCard.class);
+            card.setPlayer(null);
+            return card;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public void addChangePlacementActionListener(CardChangePlacementCallback listener) {
+        cardChangePlacementCallbacks.add(listener);
+    }
+
+    public void addChangePositionActionListener(CardChangePositionCallback listener) {
+        cardChangePositionCallbacks.add(listener);
     }
 }

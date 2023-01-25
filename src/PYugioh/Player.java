@@ -16,6 +16,7 @@ public class Player {
     public int lifePoints;
     public int maxLifePoints;
     public Deck deck;
+    public GameBoard board;
 
     public Player(String name) {
         this.name = name;
@@ -24,11 +25,15 @@ public class Player {
         this.deck = new Deck(this);
     }
 
+    public Player(String name, IYugiohCard[] cards) {
+        this(name);
+        this.deck = new Deck(this, cards);
+    }
+
 
     public void pickFrom(ArrayList<IYugiohCard> cards, Consumer<IYugiohCard> callback, String message) {
         // display image
         JFrame frame = new JFrame("Choisissez une Carte");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
         frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
 
@@ -75,10 +80,10 @@ public class Player {
         frame.setSize(500, 500);
         frame.setVisible(true);
     }
+    
     public void pickFrom(ArrayList<IYugiohCard> cards, int count, Consumer<ArrayList<IYugiohCard>> callback, String message) {
         // display image
         JFrame frame = new JFrame("Choisissez une Carte");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
         frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
         
@@ -124,9 +129,17 @@ public class Player {
         frame.setVisible(true);
     }
 
+    public void placeCard(IYugiohCard card) {
+        if (card instanceof MonsterCard) {
+            ((MonsterCard)card).move(CardPlacement.Monster);
+        } else if (card instanceof ASpellTrapCard) {
+            ((ASpellTrapCard)card).move(CardPlacement.SpellTrap);
+        }
+    }
+
     public void drawCard() {
         if (deck.cardsInDeck.size() > 0) {
-            deck.cardsInDeck.get(0).move(CardPlacement.Deck);
+            deck.cardsInDeck.get(0).move(CardPlacement.Hand);
         }
     }
 

@@ -2,40 +2,96 @@ package PYugioh.SpellTrapCard;
 
 import PYugioh.*;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
 
 public abstract class ASpellTrapCard implements IYugiohCard {
+
+    
+    public ASpellTrapCard(
+            String name,
+            String description,
+            String id,
+            String imagePath,
+            SpellTrapType type,
+            CardInvokeCallback onInvoke,
+            CardChangePlacementCallback onMove
+    ) {
+        this.name = name;
+        this.description = description;
+        this.id = id;
+        this.imagePath = imagePath;
+        this.type = type;
+        this.onInvoke = onInvoke;
+        this.onMove = onMove;
+    }
+
+
     protected Player player;
     protected GameBoard game;
+
+    private String name;
+    private String description;
+    private String id;
+    private String imagePath;
+    private SpellTrapType type;
     private CardPlacement placement = CardPlacement.Deck;
-    public abstract SpellTrapType getType();
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getID() {
+        return id;
+    }
+
+    public SpellTrapType getType() {
+        return type;
+    }
 
     public final CardPlacement getPlacement() {
         return placement;
     }
 
-    public CardMoveCallback onMove;
-    public ArrayList<CardMoveCallback> cardMoveCallbacks = new ArrayList<>();
+    public BufferedImage getCardImage() {
+        try {
+            return ImageIO.read(new File(imagePath));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return DeckPanel.cardBackfaceImage;
+        }
+    }
 
-    public CardInvokeCallback onInvoke;
-
-
-
+    public Player getPlayer() {
+        return player;
+    }
     public void setPlayer(Player player) {
         this.player = player;
         switch (placement) {
-            case Field -> player.deck.fieldCard = this;
             case Monster -> player.deck.spellTrapCards.add(this);
-            case ExtraDeck -> player.deck.cardsInExtraDeck.add(this);
-            case Banished -> player.deck.cardsInBanished.add(this);
             case Graveyard -> player.deck.cardsInGraveyard.add(this);
             case Hand -> player.deck.cardsInHand.add(this);
             case Deck -> player.deck.cardsInDeck.add(this);
+            default -> {}
         }
     }
+    public CardChangePlacementCallback onMove;
+    public ArrayList<CardChangePlacementCallback> cardChangePlacementCallbacks = new ArrayList<>();
+
+    public CardInvokeCallback onInvoke;
+    public ArrayList<CardInvokeCallback> cardInvokeCallbacks = new ArrayList<>();
+
+
+
     public final void invoke() {
         if (onInvoke != null)
-            onInvoke.invoke(player);
+            onInvoke.invoke(this);
     }
 
     public final void move(CardPlacement to) {
@@ -43,53 +99,45 @@ public abstract class ASpellTrapCard implements IYugiohCard {
             return;
 
         switch (to) {
-            case Field -> {
-                if (this.player.deck.fieldCard != null)
-                    this.player.deck.fieldCard.move(CardPlacement.Graveyard);
-                this.player.deck.fieldCard = this;
-            }
             case SpellTrap -> {
-                if (this.player.deck.spellTrapCards.size() >= 5)
+                if (player.deck.spellTrapCards.size() >= 5)
                     return;
-                this.player.deck.spellTrapCards.add((ASpellTrapCard) this);
+                player.deck.spellTrapCards.add((ASpellTrapCard) this);
             }
-            case ExtraDeck -> {
-                if (this.player.deck.cardsInExtraDeck.size() >= 15)
-                    return;
-                this.player.deck.cardsInExtraDeck.add(this);
-            }
-            case Banished -> this.player.deck.cardsInBanished.add(this);
-            case Graveyard -> this.player.deck.cardsInGraveyard.add(this);
+            case Graveyard -> player.deck.cardsInGraveyard.add(this);
             case Hand -> {
-                if (this.player.deck.cardsInHand.size() >= 6)
+                if (player.deck.cardsInHand.size() >= 6)
                     return;
-                this.player.deck.cardsInHand.add(this);
+                player.deck.cardsInHand.add(this);
             }
-            case Deck -> this.player.deck.cardsInDeck.add(this);
+            case Deck -> player.deck.cardsInDeck.add(this);
+            default -> {}
         }
 
         switch (this.placement) {
-            case Field -> this.player.deck.fieldCard = null;
-            case SpellTrap -> this.player.deck.spellTrapCards.remove(this);
-            case ExtraDeck -> this.player.deck.cardsInExtraDeck.remove(this);
-            case Banished -> this.player.deck.cardsInBanished.remove(this);
-            case Graveyard -> this.player.deck.cardsInGraveyard.remove(this);
-            case Hand -> this.player.deck.cardsInHand.remove(this);
-            case Deck -> this.player.deck.cardsInDeck.remove(this);
+            case SpellTrap -> player.deck.spellTrapCards.remove(this);
+            case Graveyard -> player.deck.cardsInGraveyard.remove(this);
+            case Hand -> player.deck.cardsInHand.remove(this);
+            case Deck -> player.deck.cardsInDeck.remove(this);
+            default -> {}
         }
 
         if (onMove != null)
-            onMove.invoke(player, getPlacement(), to);
+            onMove.invoke(this, getPlacement(), to);
 
-        for (CardMoveCallback listener : cardMoveCallbacks) {
-            listener.invoke(player, getPlacement(), to);
-            cardMoveCallbacks.remove(listener);
+        for (CardChangePlacementCallback listener : cardChangePlacementCallbacks) {
+            listener.invoke(this, getPlacement(), to);
+            cardChangePlacementCallbacks.remove(listener);
         }
 
-        this.placement = placement;
+        player.board.update();
+        this.placement = to;
     }
-    public void addMoveEventListener(CardMoveCallback listener) {
-        cardMoveCallbacks.add(listener);
+    public void addChangePlacementActionListener(CardChangePlacementCallback listener) {
+        cardChangePlacementCallbacks.add(listener);
+    }
+    public void addInvokeActionListener(CardInvokeCallback listener) {
+        cardInvokeCallbacks.add(listener);
     }
 
 }

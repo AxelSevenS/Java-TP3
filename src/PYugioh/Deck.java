@@ -9,16 +9,27 @@ import java.util.function.Predicate;
 public class Deck {
     public Deck(Player player) {
         this.player = player;
+        cardsInHand = new ArrayList<>();
+        cardsInDeck = new ArrayList<>();
+        monsterCards = new ArrayList<>();
+        spellTrapCards = new ArrayList<>();
+        cardsInGraveyard = new ArrayList<>();
+
     }
+    public Deck(Player player, IYugiohCard[] cards) {
+        this(player);
+        for (IYugiohCard card : cards) {
+            card.setPlayer(player);
+            cardsInDeck.add(card);
+        }
+    }
+
     private Player player;
     public ArrayList<IYugiohCard> cardsInHand;
     public ArrayList<IYugiohCard> cardsInDeck;
     public ArrayList<MonsterCard> monsterCards;
     public ArrayList<ASpellTrapCard> spellTrapCards;
     public ArrayList<IYugiohCard> cardsInGraveyard;
-    public ArrayList<IYugiohCard> cardsInBanished;
-    public ArrayList<IYugiohCard> cardsInExtraDeck;
-    public IYugiohCard fieldCard;
 
     public ArrayList<IYugiohCard> getCards(int deckFlags, Predicate<IYugiohCard> predicate) {
         ArrayList<IYugiohCard> selectedCards = new ArrayList<>();
@@ -57,25 +68,6 @@ public class Deck {
                 }
             }
         }
-        if (EnumExtensions.isFlaggedIn(deckFlags, CardPlacement.Banished)) {
-            for (IYugiohCard card : cardsInBanished) {
-                if (predicate.test(card)) {
-                    selectedCards.add(card);
-                }
-            }
-        }
-        if (EnumExtensions.isFlaggedIn(deckFlags, CardPlacement.ExtraDeck)) {
-            for (IYugiohCard card : cardsInExtraDeck) {
-                if (predicate.test(card)) {
-                    selectedCards.add(card);
-                }
-            }
-        }
-        if (EnumExtensions.isFlaggedIn(deckFlags, CardPlacement.Field)) {
-            if (predicate.test(fieldCard)) {
-                selectedCards.add(fieldCard);
-            }
-        }
         return selectedCards;
     }
     public ArrayList<IYugiohCard> getCards(int deckFlags) {
@@ -104,19 +96,6 @@ public class Deck {
             for (IYugiohCard card : cardsInGraveyard) {
                 selectedCards.add(card);
             }
-        }
-        if (EnumExtensions.isFlaggedIn(deckFlags, CardPlacement.Banished)) {
-            for (IYugiohCard card : cardsInBanished) {
-                selectedCards.add(card);
-            }
-        }
-        if (EnumExtensions.isFlaggedIn(deckFlags, CardPlacement.ExtraDeck)) {
-            for (IYugiohCard card : cardsInExtraDeck) {
-                selectedCards.add(card);
-            }
-        }
-        if (EnumExtensions.isFlaggedIn(deckFlags, CardPlacement.Field)) {
-            selectedCards.add(fieldCard);
         }
         return selectedCards;
     }

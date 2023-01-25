@@ -1,6 +1,7 @@
 package PYugioh;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 
 public interface IYugiohCard {
 
@@ -8,10 +9,13 @@ public interface IYugiohCard {
     String getDescription();
     String getID();
 
-    Image getCardImage();
+    BufferedImage getCardImage();
 
     CardPlacement getPlacement();
 
+    Player getPlayer();
+    void setPlayer(Player player);
+
     void move(CardPlacement to);
-    void addMoveEventListener(CardMoveCallback listener);
+    void addChangePlacementActionListener(CardChangePlacementCallback listener);
 }

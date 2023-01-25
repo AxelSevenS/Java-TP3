@@ -1,6 +1,8 @@
 import PSchoolClass.SchoolClass;
 import PStudent.Student;
 
+import java.nio.file.Path;
+
 public class TP3_1 {
 
 
@@ -21,7 +23,13 @@ public class TP3_1 {
         guillaume.setGrade("Java", "TP2", 12.5);
         guillaume.setGrade("Java", "TP3", 18.5);
 
+        schoolClass.saveToFile(Path.of("test.json"));
+
+        SchoolClass class2 = SchoolClass.loadFromFile(Path.of("test.json"));
+        class2.name = "B3 Info";
+
 
         schoolClass.display();
+        class2.display();
     }
 }

@@ -1,10 +1,18 @@
 package PSchoolClass;
 
+import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
+import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import org.json.JSONObject;
 
 import PStudent.Student;
@@ -52,14 +60,13 @@ public class SchoolClass {
      * @param path
      */
     public void saveToFile(Path path) {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("name", name);
-        jsonObject.put("students", students);
 
         try {
-            FileWriter file = new FileWriter(path.toString());
-            file.write(jsonObject.toString());
-            file.flush();
+            Gson gson = new Gson();
+            FileWriter file = new FileWriter( path.toString() );
+            String json = gson.toJson(this);
+            System.out.println(json);
+            file.write(json);
             file.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -70,13 +77,14 @@ public class SchoolClass {
     /**
      * @param path
      */
-    public void loadFromFile(Path path) {
+    public static SchoolClass loadFromFile(Path path) {
         try {
-            JSONObject jsonObject = new JSONObject(path.toString());
-            name = jsonObject.getString("name");
-            students = (HashMap<String, Student>) jsonObject.get("students");
+            Gson gson = new Gson(); // Or use new GsonBuilder().create();
+            FileReader file = new FileReader( path.toString() );
+            return gson.fromJson(file, SchoolClass.class);
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
     }
 }
